@@ -40,7 +40,3 @@ task webappbuild(type:Exec, dependsOn:npmInstall) {
 		}
 	}
 }
-
-processResources {
-	dependsOn webappbuild
-}
