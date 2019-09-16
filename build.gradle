@@ -1,0 +1,46 @@
+plugins {
+	id 'org.springframework.boot' version '2.1.4.RELEASE'
+	id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.horton'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	all*.exclude module: 'spring-boot-starter-logging'
+	all*.exclude module: 'spring-boot-starter-tomcat'
+}
+
+dependencies {
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jetty'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+task npmInstall(type:Exec) {
+	workingDir 'src/main/webapp'
+	commandLine 'npm', 'install'
+}
+
+task webappbuild(type:Exec, dependsOn:npmInstall) {
+	workingDir 'src/main/webapp'
+	commandLine 'npm', 'run', 'build'
+	doLast {
+		copy {
+			from "src/main/webapp/dist"
+			into "src/main/resources/static"
+		}
+	}
+}
+
+processResources {
+	dependsOn webappbuild
+}
