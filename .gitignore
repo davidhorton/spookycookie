@@ -28,11 +28,3 @@ HELP.md
 
 ### VS Code ###
 .vscode/
-
-src/main/resources/static/
-developer.properties
-docker/resources/
-docker/evo_no_history/
-docker/intdbupdateservice.jar
-
-devGitRepo/
