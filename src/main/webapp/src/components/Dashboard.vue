@@ -3,6 +3,14 @@
     <div style="background-color: rgba(37, 36, 57, 0.9)">
       <b-navbar toggleable="lg" type="dark" variant="purple" class="shadow p-2 mb-4">
         <b-navbar-brand style="padding-left:20%;">Spooky Cookie!</b-navbar-brand>
+
+        <b-navbar-nav class="ml-auto">
+          <b-nav-item-dropdown right>
+            <template slot="button-content"></template>
+            <b-dropdown-item @click="startOver">Start Over</b-dropdown-item>
+            <b-dropdown-item href="/admin">Admin</b-dropdown-item>
+          </b-nav-item-dropdown>
+        </b-navbar-nav>
       </b-navbar>
     </div>
 
@@ -22,18 +30,25 @@
           </div>
         </b-card>
 
-        <b-card v-if="teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+        <b-card :header="currentQuestionHeader" v-if="teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+          <p style="color:#009c00" v-if="rightAnswer">{{rightAnswerText}}</p>
           <p>{{currentQuestionText}}</p>
-          <p style="color:red" v-if="wrongAnswer">{{wrongAnswerText}}</p>
+          <a :class="showHint ? 'collapsed' : null" @click="showHint = !showHint" href="#">Show hint...</a>
+          <b-collapse id="question-hint" class="mt-2" v-model="showHint">
+            <b-card>{{currentQuestionHint}}</b-card>
+          </b-collapse>
+          <p style="color:#e20000" v-if="wrongAnswer">{{wrongAnswerText}}</p>
           <b-form-input
             size="sm"
             class="mr-sm-2"
-            placeholder="secret code"
+            placeholder="Type the secret code here"
             type="text"
+            style="margin-top: 20px;"
+            @keydown.enter="nextQuestion"
             v-model="answer"
           ></b-form-input>
           <div class="pt-4">
-            <b-button v-if="currentStep !== 0 && !allDone" @click="previousQuestion" variant="primary" class="shadow-sm p-2 rounded float-left">
+            <b-button v-if="!allDone" @click="previousQuestion" variant="primary" class="shadow-sm p-2 rounded float-left">
               <strong>< Back</strong>
             </b-button>
             <b-button v-if="!allDone" @click="nextQuestion" variant="success" class="shadow-sm p-2 rounded float-right">
@@ -42,8 +57,13 @@
           </div>
         </b-card>
 
-        <b-card v-if="allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+        <b-card header="Nice!" v-if="allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <p style="text-align: center;">All done! You did it!</p>
+          <div style="text-align: center;">
+            <b-button @click="startOver" variant="primary" class="shadow-sm p-2 rounded">
+              <strong>Start Over</strong>
+            </b-button>
+          </div>
         </b-card>
       </b-container>
       <b-modal v-model="errored" centered hide-footer title="No Bueno..." header-bg-variant="danger" header-text-variant="dark">
@@ -69,9 +89,12 @@
         selectedTeam: {},
         answer: '',
         currentStep: 0,
+        showHint: false,
         allDone: false,
         wrongAnswer: false,
         wrongAnswerText: '',
+        rightAnswer: false,
+        rightAnswerText: '',
       };
     },
     computed: {
@@ -80,6 +103,12 @@
       },
       currentQuestionText() {
         return this.currentQuestion.questionText
+      },
+      currentQuestionHint() {
+        return this.currentQuestion.hint
+      },
+      currentQuestionHeader() {
+        return "Team #" + this.selectedTeam.number + ", Question #" + this.currentQuestion.number
       },
     },
     methods: {
@@ -106,6 +135,8 @@
         else {
           this.currentStep--;
         }
+        this.showHint = false;
+        this.$forceUpdate();
       },
       nextQuestion() {
         const current = this.currentQuestion;
@@ -122,12 +153,18 @@
           } else {
             this.currentStep++;
           }
+          this.rightAnswer = true;
           this.wrongAnswer = false;
           this.wrongAnswerText = '';
+          this.setRightAnswerText();
           this.answer = '';
+          this.showHint = false;
+          this.$forceUpdate();
         }
         else {
+          this.rightAnswer = false;
           this.wrongAnswer = true;
+          this.rightAnswerText = '';
           this.setWrongAnswerText();
         }
       },
@@ -143,9 +180,21 @@
           "It appears you are silly and put the wrong answer.",
           "Wowza, that is wrong!",
           "No doubt about it - that is wrong.",
-          "How about you just put in the right answer this time, okay?"
+          "How about you just put in the right answer this time, okay?",
+          "Sorry, that's the wrong answer.",
+          "I regret to inform you that that is the wrong answer.",
         ];
         this.wrongAnswerText = wrongMessages[Math.floor(Math.random()*wrongMessages.length)];
+      },
+      setRightAnswerText() {
+        const rightMessages = [
+          "Nice! On to the next one!",
+          "You done good. Keep going!",
+          "Your skill is unmatched. Well done!",
+          "Good job!",
+          "Yup, that's right!",
+        ];
+        this.rightAnswerText = rightMessages[Math.floor(Math.random()*rightMessages.length)];
       },
       handleError(errorMsg, errorObject) {
         const message = errorMsg ? errorMsg : errorObject;
