@@ -1,7 +1,7 @@
 package com.horton.spookycookie.controller;
 
 import com.horton.spookycookie.dto.Question;
-import com.horton.spookycookie.dto.Team;
+import com.horton.spookycookie.dto.QuizInfo;
 import com.horton.spookycookie.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +31,8 @@ public class QuizController {
         return questionService.getQuestionsForTeam(teamID);
     }
 
-    @GetMapping("/teams")
-    public List<Team> getTeams() {
-        return questionService.getTeams();
+    @GetMapping("/info")
+    public QuizInfo getQuizInfo() {
+        return questionService.getQuizInfo();
     }
 }

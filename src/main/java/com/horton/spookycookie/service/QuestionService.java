@@ -1,6 +1,7 @@
 package com.horton.spookycookie.service;
 
 import com.horton.spookycookie.dto.Question;
+import com.horton.spookycookie.dto.QuizInfo;
 import com.horton.spookycookie.dto.Team;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +57,11 @@ public class QuestionService {
         return q;
     }
 
-    public List<Team> getTeams() {
+    public QuizInfo getQuizInfo() {
+        QuizInfo quizInfo = new QuizInfo();
+        quizInfo.setAllDoneMessage("All done! You did it!");
+        quizInfo.setSuperDuperHint("Call Amy Bell! 801-867-9246");
+
         Team t1 = new Team();
         t1.setId("team1");
         t1.setNumber(1);
@@ -65,6 +70,8 @@ public class QuestionService {
         t2.setId("team2");
         t2.setNumber(2);
 
-        return Arrays.asList(t1, t2);
+        quizInfo.setTeams(Arrays.asList(t1, t2));
+
+        return quizInfo;
     }
 }

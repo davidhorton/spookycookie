@@ -36,6 +36,11 @@
           <a :class="showHint ? 'collapsed' : null" @click="showHint = !showHint" href="#">Show hint...</a>
           <b-collapse id="question-hint" class="mt-2" v-model="showHint">
             <b-card>{{currentQuestionHint}}</b-card>
+
+            <a :class="showSuperDuperHint ? 'collapsed' : null" @click="showSuperDuperHint = !showSuperDuperHint" href="#">Still stuck?</a>
+            <b-collapse id="super-duper-hint" class="mt-2" v-model="showSuperDuperHint">
+              <b-card>{{superDuperHint}}</b-card>
+            </b-collapse>
           </b-collapse>
           <p style="color:#e20000" v-if="wrongAnswer">{{wrongAnswerText}}</p>
           <b-form-input
@@ -58,7 +63,7 @@
         </b-card>
 
         <b-card header="Nice!" v-if="allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <p style="text-align: center;">All done! You did it!</p>
+          <p style="text-align: center;">{{allDoneText}}</p>
           <div style="text-align: center;">
             <b-button @click="startOver" variant="primary" class="shadow-sm p-2 rounded">
               <strong>Start Over</strong>
@@ -84,12 +89,15 @@
         loading: true,
         errored: false,
         questions: [],
+        allDoneText: '',
+        superDuperHint: '',
         teamSelected: false,
         teams: [],
         selectedTeam: {},
         answer: '',
         currentStep: 0,
         showHint: false,
+        showSuperDuperHint: false,
         allDone: false,
         wrongAnswer: false,
         wrongAnswerText: '',
@@ -136,6 +144,7 @@
           this.currentStep--;
         }
         this.showHint = false;
+        this.showSuperDuperHint = false;
         this.$forceUpdate();
       },
       nextQuestion() {
@@ -159,6 +168,7 @@
           this.setRightAnswerText();
           this.answer = '';
           this.showHint = false;
+          this.showSuperDuperHint = false;
           this.$forceUpdate();
         }
         else {
@@ -207,9 +217,12 @@
     },
     mounted() {
       axios
-        .get(serverUrl + "/api/quiz/teams")
+        .get(serverUrl + "/api/quiz/info")
         .then(response => {
-          this.teams = response.data;
+          const resp = response.data;
+          this.teams = resp.teams;
+          this.allDoneText = resp.allDoneMessage;
+          this.superDuperHint = resp.superDuperHint;
         })
         .catch(error => {
           this.loading = false;
