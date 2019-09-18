@@ -61,17 +61,21 @@ public class QuestionService {
         QuizInfo quizInfo = new QuizInfo();
         quizInfo.setAllDoneMessage("All done! You did it!");
         quizInfo.setSuperDuperHint("Call Amy Bell! 801-867-9246");
-
-        Team t1 = new Team();
-        t1.setId("team1");
-        t1.setNumber(1);
-
-        Team t2 = new Team();
-        t2.setId("team2");
-        t2.setNumber(2);
-
-        quizInfo.setTeams(Arrays.asList(t1, t2));
-
+        quizInfo.setTeams(Arrays.asList(
+                createTeam("team1", 1),
+                createTeam("team2", 2),
+                createTeam("team3", 3),
+                createTeam("team4", 4),
+                createTeam("team5", 5),
+                createTeam("team6", 6)
+        ));
         return quizInfo;
+    }
+
+    private Team createTeam(String id, int number) {
+        Team t1 = new Team();
+        t1.setId(id);
+        t1.setNumber(number);
+        return t1;
     }
 }

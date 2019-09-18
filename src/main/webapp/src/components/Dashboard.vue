@@ -17,13 +17,13 @@
     <div>
       <b-spinner
         v-if="loading"
-        style="width: 100px; height: 100px; position: fixed; top: 40%; left: 50%;"
+        style="width: 100px; height: 100px; position: fixed; top: 40%; left: 40%;"
         variant="secondary"
       ></b-spinner>
       <b-container v-if="!loading">
 
-        <b-card v-if="!teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <div style="max-height: 400px; overflow-y: scroll;">
+        <b-card header="Choose your team!" v-if="!teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+          <div>
             <b-list-group>
               <b-list-group-item v-for="(item, index) in teams" :key="index" button @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
             </b-list-group>
