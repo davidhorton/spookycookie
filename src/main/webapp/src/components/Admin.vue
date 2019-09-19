@@ -119,6 +119,12 @@
           </b-list-group>
 
           <p v-if="selectedTeam.questionIds.length === 0">No questions added yet for this team</p>
+
+          <div style="text-align: center; margin-top: 25px;">
+            <b-button v-if="selectedTeam.questionIds.length < selectedQuiz.questions.length" @click="addTeamQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
+              <strong>Add Questions</strong>
+            </b-button>
+          </div>
         </b-card>
 
         <div v-if="quizSelected" style="text-align: center; margin-bottom: 30px;">
@@ -230,6 +236,22 @@
         </b-container>
       </b-modal>
 
+      <b-modal size="lg" header-bg-variant="light" v-model="showAddTeamQuestionsModal" centered hide-footer :title="teamAddQuestionModalHeader">
+        <b-container fluid>
+          <p>Just click on which question you want to add to team #{{selectedTeam.number}}.</p>
+
+          <div style="max-height: 400px; overflow-y: scroll;">
+            <b-list-group>
+              <b-list-group-item v-for="(item, index) in questionsNotYetOnTeam" :key="index" button @click="()=>{newTeamQuestionSelected(item)}">
+                {{item}}:
+                <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
+                <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
+              </b-list-group-item>
+            </b-list-group>
+          </div>
+        </b-container>
+      </b-modal>
+
       <b-modal v-model="errored" centered hide-footer title="No Bueno..." header-bg-variant="danger" header-text-variant="dark">
         <p>Uh oh, something went wrong. Go tell David Horton and he'll fix it!</p>
       </b-modal>
@@ -256,6 +278,7 @@
         addNewQuestion: false,
         showQuestionModal: false,
         newQuestionCounter: 1,
+        showAddTeamQuestionsModal: false,
       };
     },
     computed: {
@@ -265,6 +288,30 @@
       questionModalHeader() {
         return this.addNewQuestion ? 'Add New Question' : 'Edit Question';
       },
+      teamAddQuestionModalHeader() {
+        return "Add Questions for Team #" + this.selectedTeam.number
+      },
+      questionsNotYetOnTeam() {
+        if(!this.teamSelected) {
+          return [];
+        }
+
+        const questions = [];
+        for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
+          let questionOnTeam = false;
+          for (let j = 0; j < this.selectedTeam.questionIds.length; j++) {
+            if (this.selectedQuiz.questions[i].id === this.selectedTeam.questionIds[j]) {
+              questionOnTeam = true;
+              break;
+            }
+          }
+
+          if(!questionOnTeam) {
+            questions.push(this.selectedQuiz.questions[i].id);
+          }
+        }
+        return questions;
+      }
     },
     methods: {
       onSelectQuiz(item) {
@@ -385,6 +432,15 @@
             this.selectedTeam.questionIds.splice(j, 1);
             break;
           }
+        }
+      },
+      addTeamQuestionClicked() {
+        this.showAddTeamQuestionsModal = true;
+      },
+      newTeamQuestionSelected(item) {
+        this.selectedTeam.questionIds.push(item);
+        if(this.selectedTeam.questionIds.length >= this.selectedQuiz.questions.length) {
+          this.showAddTeamQuestionsModal = false;
         }
       },
       questionEnabledFromID(item) {
