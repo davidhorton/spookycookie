@@ -28,6 +28,8 @@
             <b-list-group>
               <b-list-group-item v-for="(item, index) in quizzes" :key="index" button :active="item.selected" @click="()=>{onSelectQuiz(item)}">{{item.name}} {{item.current ? '(Current)' : ''}}</b-list-group-item>
             </b-list-group>
+
+            <p v-if="quizzes.length === 0">Uh oh, there are no quizzes. That probably means something went wrong - talk to David Horton!</p>
           </div>
         </b-card>
 
@@ -73,31 +75,42 @@
             </b-list-group-item>
           </b-list-group>
 
+          <p v-if="selectedQuiz.questions.length === 0">There aren't any questions!</p>
+
           <div style="text-align: center; margin-top: 25px;">
-            <b-button @click="addNewQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
+            <b-button v-if="selectedQuiz.questions.length < 50" @click="addNewQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
               <strong>Add New</strong>
             </b-button>
           </div>
         </b-card>
 
         <b-card v-if="quizSelected" header="Teams" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <div>
-            <b-list-group>
-              <b-list-group-item v-for="(item, index) in selectedQuiz.teams" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
-            </b-list-group>
+          <b-list-group>
+            <b-list-group-item v-for="(item, index) in selectedQuiz.teams" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
+          </b-list-group>
+
+          <p v-if="selectedQuiz.teams.length === 0">There aren't any teams!</p>
+
+          <div style="text-align: center; margin-top: 25px;">
+            <b-button v-if="selectedQuiz.teams.length > 0" @click="removeTeamClicked" variant="danger" class="shadow-sm p-2 rounded">
+              <strong>Remove 1 Team</strong>
+            </b-button>
+            <b-button v-if="selectedQuiz.teams.length < 20" @click="addNewTeamClicked" variant="primary" class="shadow-sm p-2 rounded">
+              <strong>Add 1 More Team</strong>
+            </b-button>
           </div>
         </b-card>
 
         <b-card v-if="quizSelected && teamSelected" :header="questionOrderingHeader" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <div>
-            <b-list-group>
-              <b-list-group-item v-for="(item, index) in selectedTeam.questionIds" :key="index">
-                {{item}}:
-                <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
-                <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
-              </b-list-group-item>
-            </b-list-group>
-          </div>
+          <b-list-group>
+            <b-list-group-item v-for="(item, index) in selectedTeam.questionIds" :key="index">
+              {{item}}:
+              <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
+              <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
+            </b-list-group-item>
+          </b-list-group>
+
+          <p v-if="selectedTeam.questionIds.length === 0">No questions added yet for this team</p>
         </b-card>
 
         <div v-if="quizSelected" style="text-align: center; margin-bottom: 30px;">
@@ -336,6 +349,16 @@
             this.quizzes[i].teams[j].selected = false;
           }
         }
+      },
+      addNewTeamClicked() {
+        this.selectedQuiz.teams.push({
+          id: 'NEW' + this.newQuestionCounter++,
+          number: this.selectedQuiz.teams.length + 1,
+          questionIds: []
+        });
+      },
+      removeTeamClicked() {
+        this.selectedQuiz.teams.pop();
       },
       questionEnabledFromID(item) {
         for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
