@@ -65,14 +65,18 @@
         </b-card>
 
         <b-card v-if="quizSelected" header="Questions" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <div>
-            <b-list-group>
-              <b-list-group-item v-for="(item, index) in selectedQuiz.questions" :key="index" button :active="item.selected" @click="()=>{onSelectQuestion(item)}">
-                {{item.id}}:
-                <span v-if="item.enabled">{{item.questionText}}</span>
-                <span v-else>(Disabled) <s>{{item.questionText}}</s></span>
-              </b-list-group-item>
-            </b-list-group>
+          <b-list-group>
+            <b-list-group-item v-for="(item, index) in selectedQuiz.questions" :key="index" button :active="item.selected" @click="()=>{onSelectQuestion(item)}">
+              {{item.id}}:
+              <span v-if="item.enabled">{{item.questionText}}</span>
+              <span v-else>(Disabled) <s>{{item.questionText}}</s></span>
+            </b-list-group-item>
+          </b-list-group>
+
+          <div style="text-align: center; margin-top: 25px;">
+            <b-button @click="addNewQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
+              <strong>Add New</strong>
+            </b-button>
           </div>
         </b-card>
 
@@ -97,6 +101,9 @@
         </b-card>
 
         <div v-if="quizSelected" style="text-align: center; margin-bottom: 30px;">
+          <b-button @click="cancel" variant="warning" class="shadow-sm p-2 rounded">
+            <strong>Cancel</strong>
+          </b-button>
           <b-button @click="save" variant="primary" class="shadow-sm p-2 rounded">
             <strong>Save All The Things</strong>
           </b-button>
@@ -104,15 +111,15 @@
 
       </b-container>
 
-      <b-modal size="lg" header-bg-variant="light" v-model="questionSelected" centered hide-footer @hide="deselectAllQuestions" title="Edit Question">
+      <b-modal size="lg" header-bg-variant="light" v-model="showQuestionModal" centered hide-footer @hide="deselectAllQuestions" :title="questionModalHeader">
         <b-container fluid>
 
-          <b-row class="my-1">
+          <b-row v-if="!addNewQuestion" class="my-1">
             <b-col sm="3">
               <label for="questionIDInput">ID:</label>
             </b-col>
             <b-col sm="9">
-              <b-form-input id="questionIDInput" size="sm" class="mr-sm-2" type="text" disabled="true" v-model="selectedQuestion.id"></b-form-input>
+              <b-form-input id="questionIDInput" size="sm" class="mr-sm-2" type="text" :disabled=true v-model="selectedQuestion.id"></b-form-input>
             </b-col>
           </b-row>
 
@@ -187,6 +194,18 @@
               <b-form-input id="answer5Input" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.answer5"></b-form-input>
             </b-col>
           </b-row>
+
+          <div v-if="addNewQuestion" style="text-align: center; margin-top: 25px;">
+            <b-button @click="saveQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
+              <strong>Save New Question</strong>
+            </b-button>
+          </div>
+
+          <div v-if="!addNewQuestion" style="text-align: center; margin-top: 25px;">
+            <b-button @click="deleteQuestionClicked" variant="danger" class="shadow-sm p-2 rounded">
+              <strong>Delete Question</strong>
+            </b-button>
+          </div>
         </b-container>
       </b-modal>
 
@@ -212,13 +231,18 @@
         selectedQuiz: {},
         teamSelected: false,
         selectedTeam: {},
-        questionSelected: false,
         selectedQuestion: {},
+        addNewQuestion: false,
+        showQuestionModal: false,
+        newQuestionCounter: 1,
       };
     },
     computed: {
       questionOrderingHeader() {
         return "Question Ordering for Team #" + this.selectedTeam.number
+      },
+      questionModalHeader() {
+        return this.addNewQuestion ? 'Add New Question' : 'Edit Question';
       },
     },
     methods: {
@@ -235,9 +259,10 @@
       },
       onSelectQuestion(item) {
         this.selectedQuestion = item;
-        this.questionSelected = true;
         this.deselectAllQuestions();
         item.selected = true;
+        this.addNewQuestion = false;
+        this.showQuestionModal = true;
       },
       deselectAllQuestions() {
         for(let i = 0; i < this.quizzes.length; i++) {
@@ -245,6 +270,59 @@
             this.quizzes[i].questions[j].selected = false;
           }
         }
+      },
+      addNewQuestionClicked() {
+        this.selectedQuestion = {
+          id: 'NEW' + this.newQuestionCounter++,
+          questionText: '',
+          hint: '',
+          enabled: true,
+          answer1: '',
+          answer2: '',
+          answer3: '',
+          answer4: '',
+          answer5: '',
+        };
+        this.deselectAllQuestions();
+        this.addNewQuestion = true;
+        this.showQuestionModal = true;
+      },
+      saveQuestionClicked() {
+        this.selectedQuiz.questions.push({
+          id: this.selectedQuestion.id,
+          questionText: this.selectedQuestion.questionText,
+          hint: this.selectedQuestion.hint,
+          enabled: this.selectedQuestion.enabled,
+          answer1: this.selectedQuestion.answer1,
+          answer2: this.selectedQuestion.answer2,
+          answer3: this.selectedQuestion.answer3,
+          answer4: this.selectedQuestion.answer4,
+          answer5: this.selectedQuestion.answer5,
+        });
+        this.selectedQuestion = {};
+        this.deselectAllQuestions();
+        this.showQuestionModal = false;
+      },
+      deleteQuestionClicked() {
+        const idToDelete = this.selectedQuestion.id;
+        for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
+          if(this.selectedQuiz.questions[i].id === idToDelete) {
+            this.selectedQuiz.questions.splice(i, 1);
+            break;
+          }
+        }
+
+        for (let i = 0; i < this.selectedQuiz.teams.length; i++) {
+          for (let j = 0; j < this.selectedQuiz.teams[i].questionIds.length; j++) {
+            if(this.selectedQuiz.teams[i].questionIds[j] === idToDelete) {
+              this.selectedQuiz.teams[i].questionIds.splice(j, 1);
+              break;
+            }
+          }
+        }
+        this.selectedQuestion = {};
+        this.deselectAllQuestions();
+        this.showQuestionModal = false;
       },
       onSelectTeam(item) {
         this.selectedTeam = item;
@@ -277,6 +355,9 @@
       },
       save() {
 
+      },
+      cancel() {
+        window.location.reload();
       },
       handleError(errorMsg, errorObject) {
         const message = errorMsg ? errorMsg : errorObject;
