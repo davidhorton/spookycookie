@@ -1,3 +1,4 @@
+<!--suppress HtmlUnknownTag -->
 <template>
   <div class="main">
     <div style="background-color: rgba(37, 36, 57, 0.9)">
@@ -106,8 +107,21 @@
       };
     },
     computed: {
+      currentQuestions() {
+        const questionsForTeam = [];
+        for(let i = 0; i < this.selectedTeam.questionIds.length; i++) {
+          for(let j = 0; j < this.questions.length; j++) {
+            const q = this.questions[j];
+            if(this.selectedTeam.questionIds[i] === q.id && q.enabled) {
+              questionsForTeam.push(q);
+              break;
+            }
+          }
+        }
+        return questionsForTeam;
+      },
       currentQuestion() {
-        return this.questions[this.currentStep]
+        return this.currentQuestions[this.currentStep]
       },
       currentQuestionText() {
         return this.currentQuestion.questionText
@@ -116,23 +130,12 @@
         return this.currentQuestion.hint
       },
       currentQuestionHeader() {
-        return "Team #" + this.selectedTeam.number + ", Question #" + this.currentQuestion.number
+        return "Team #" + this.selectedTeam.number + ", Question #" + (this.currentStep + 1)
       },
     },
     methods: {
       onSelectTeam(item) {
-        this.loading = true;
-        axios
-          .get(serverUrl + "/api/quiz/team/" + item.id + "/questions")
-          .then(response => {
-            this.selectedTeam = item;
-            this.questions = response.data;
-          })
-          .catch(error => {
-            this.loading = false;
-            this.handleError(null, error);
-          })
-          .finally(() => (this.loading = false));
+        this.selectedTeam = item;
         this.teamSelected = true;
       },
       previousQuestion() {
@@ -150,14 +153,16 @@
       nextQuestion() {
         const current = this.currentQuestion;
         let foundCorrect = false;
-        for(let i = 0; i < current.answers.length; i++) {
-          if(this.answer.trim().toUpperCase() === current.answers[i].trim().toUpperCase()) {
+        const answers = [current.answer1, current.answer2, current.answer3, current.answer4, current.answer5];
+        for(let i = 0; i < answers.length; i++) {
+          if(answers[i] && answers[i].trim() !== "" && this.answer.trim().toUpperCase() === answers[i].trim().toUpperCase()) {
             foundCorrect = true;
+            break;
           }
         }
 
         if(foundCorrect) {
-          if (this.currentStep === this.questions.length - 1) {
+          if (this.currentStep === this.currentQuestions.length - 1) {
             this.allDone = true;
           } else {
             this.currentStep++;
@@ -217,12 +222,13 @@
     },
     mounted() {
       axios
-        .get(serverUrl + "/api/quiz/info")
+        .get(serverUrl + "/api/quiz/current")
         .then(response => {
           const resp = response.data;
           this.teams = resp.teams;
           this.allDoneText = resp.allDoneMessage;
           this.superDuperHint = resp.superDuperHint;
+          this.questions = resp.questions;
         })
         .catch(error => {
           this.loading = false;

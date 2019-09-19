@@ -5,13 +5,32 @@ import java.util.List;
 
 /**
  * @author David Horton
- * Date:   9/17/19
+ * Date:   9/18/19
  */
-public class QuizInfo {
+public class Quiz {
 
+    private String name;
+    private boolean current;
     private String allDoneMessage;
     private String superDuperHint;
     private List<Team> teams = new ArrayList<>();
+    private List<Question> questions = new ArrayList<>();
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isCurrent() {
+        return current;
+    }
+
+    public void setCurrent(boolean current) {
+        this.current = current;
+    }
 
     public String getAllDoneMessage() {
         return allDoneMessage;
@@ -35,5 +54,13 @@ public class QuizInfo {
 
     public void setTeams(List<Team> teams) {
         this.teams = teams;
+    }
+
+    public List<Question> getQuestions() {
+        return questions;
+    }
+
+    public void setQuestions(List<Question> questions) {
+        this.questions = questions;
     }
 }

@@ -1,3 +1,4 @@
+<!--suppress HtmlUnknownTag, XmlInvalidId -->
 <template>
   <div class="main">
     <div style="background-color: rgba(37, 36, 57, 0.9)">
@@ -22,54 +23,173 @@
       ></b-spinner>
       <b-container v-if="!loading">
 
-        <b-card header="General" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <b-form-input
-            size="sm"
-            class="mr-sm-2"
-            placeholder="The 'all done' text"
-            type="text"
-            style="margin-top: 20px;"
-            v-model="allDoneText"
-          ></b-form-input>
-          <b-form-input
-            size="sm"
-            class="mr-sm-2"
-            placeholder="The super duper hint"
-            type="text"
-            style="margin-top: 20px;"
-            v-model="superDuperHint"
-          ></b-form-input>
-        </b-card>
-
-        <b-card header="Teams" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+        <b-card header="Quizzes" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <div>
             <b-list-group>
-              <b-list-group-item v-for="(item, index) in teams" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
+              <b-list-group-item v-for="(item, index) in quizzes" :key="index" button :active="item.selected" @click="()=>{onSelectQuiz(item)}">{{item.name}} {{item.current ? '(Current)' : ''}}</b-list-group-item>
             </b-list-group>
           </div>
         </b-card>
 
-        <b-card v-if="teamSelected" :header="questionOrderingHeader" id bg-variant="light" class="shadow p-3 mb-5 rounded">
-          <div>
+        <b-card v-if="quizSelected" header="General" id bg-variant="light" class="shadow p-3 mb-5 rounded">
 
+          <b-container fluid>
+            <b-row class="my-1">
+              <b-col sm="3">
+                <label for="quizNameInput">Quiz Name:</label>
+              </b-col>
+              <b-col sm="9">
+                <b-form-input id="quizNameInput" size="sm" class="mr-sm-2" type="text" v-model="selectedQuiz.name"></b-form-input>
+              </b-col>
+            </b-row>
+
+            <b-row class="my-1">
+              <b-col sm="3">
+                <label for="allDoneMessageInput">All Done Text:</label>
+              </b-col>
+              <b-col sm="9">
+                <b-form-input id="allDoneMessageInput" size="sm" class="mr-sm-2" type="text" v-model="selectedQuiz.allDoneMessage"></b-form-input>
+              </b-col>
+            </b-row>
+
+            <b-row class="my-1">
+              <b-col sm="3">
+                <label for="superDuperHintInput">Super Duper Hint Text:</label>
+              </b-col>
+              <b-col sm="9">
+                <b-form-input id="superDuperHintInput" size="sm" class="mr-sm-2" type="text" v-model="selectedQuiz.superDuperHint"></b-form-input>
+              </b-col>
+            </b-row>
+          </b-container>
+
+        </b-card>
+
+        <b-card v-if="quizSelected" header="Questions" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+          <div>
             <b-list-group>
-              <b-list-group-item v-for="(item, index) in questions" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
+              <b-list-group-item v-for="(item, index) in selectedQuiz.questions" :key="index" button :active="item.selected" @click="()=>{onSelectQuestion(item)}">
+                {{item.id}}:
+                <span v-if="item.enabled">{{item.questionText}}</span>
+                <span v-else>(Disabled) <s>{{item.questionText}}</s></span>
+              </b-list-group-item>
             </b-list-group>
           </div>
         </b-card>
 
-        <b-card style="border: none;">
-          <div class="pt-4">
-            <b-button @click="cancel" variant="warning" class="shadow-sm p-2 rounded float-left">
-              <strong>Cancel</strong>
-            </b-button>
-            <b-button @click="save" variant="success" class="shadow-sm p-2 rounded float-right">
-              <strong>Save</strong>
-            </b-button>
+        <b-card v-if="quizSelected" header="Teams" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+          <div>
+            <b-list-group>
+              <b-list-group-item v-for="(item, index) in selectedQuiz.teams" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
+            </b-list-group>
           </div>
         </b-card>
+
+        <b-card v-if="quizSelected && teamSelected" :header="questionOrderingHeader" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+          <div>
+            <b-list-group>
+              <b-list-group-item v-for="(item, index) in selectedTeam.questionIds" :key="index">
+                {{item}}:
+                <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
+                <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
+              </b-list-group-item>
+            </b-list-group>
+          </div>
+        </b-card>
+
+        <div v-if="quizSelected" style="text-align: center; margin-bottom: 30px;">
+          <b-button @click="save" variant="primary" class="shadow-sm p-2 rounded">
+            <strong>Save All The Things</strong>
+          </b-button>
+        </div>
 
       </b-container>
+
+      <b-modal size="lg" header-bg-variant="light" v-model="questionSelected" centered hide-footer @hide="deselectAllQuestions" title="Edit Question">
+        <b-container fluid>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="questionIDInput">ID:</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="questionIDInput" size="sm" class="mr-sm-2" type="text" disabled="true" v-model="selectedQuestion.id"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="enabledCheckbox">Enabled:</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-checkbox id="enabledCheckbox" v-model="selectedQuestion.enabled"></b-form-checkbox>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="questionTextInput">Question Text:</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-textarea id="questionTextInput" rows="3" max-rows="6" v-model="selectedQuestion.questionText"></b-form-textarea>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="hintInput">Hint:</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="hintInput" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.hint"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="answer1Input">Answer 1:</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="answer1Input" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.answer1"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="answer2Input">Answer 2 (optional):</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="answer2Input" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.answer2"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="answer3Input">Answer 3 (optional):</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="answer3Input" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.answer3"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="answer4Input">Answer 4 (optional):</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="answer4Input" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.answer4"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
+              <label for="answer5Input">Answer 5 (optional):</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="answer5Input" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.answer5"></b-form-input>
+            </b-col>
+          </b-row>
+        </b-container>
+      </b-modal>
+
       <b-modal v-model="errored" centered hide-footer title="No Bueno..." header-bg-variant="danger" header-text-variant="dark">
         <p>Uh oh, something went wrong. Go tell David Horton and he'll fix it!</p>
       </b-modal>
@@ -87,12 +207,13 @@
       return {
         loading: true,
         errored: false,
-        allDoneText: '',
-        superDuperHint: '',
-        teams: [],
+        quizzes: [],
+        quizSelected: false,
+        selectedQuiz: {},
         teamSelected: false,
         selectedTeam: {},
-        questions: [],
+        questionSelected: false,
+        selectedQuestion: {},
       };
     },
     computed: {
@@ -101,22 +222,61 @@
       },
     },
     methods: {
+      onSelectQuiz(item) {
+        this.selectedQuiz = item;
+        this.quizSelected = true;
+        this.deselectAllQuizzes();
+        item.selected = true;
+      },
+      deselectAllQuizzes() {
+        for(let i = 0; i < this.quizzes.length; i++) {
+          this.quizzes[i].selected = false;
+        }
+      },
+      onSelectQuestion(item) {
+        this.selectedQuestion = item;
+        this.questionSelected = true;
+        this.deselectAllQuestions();
+        item.selected = true;
+      },
+      deselectAllQuestions() {
+        for(let i = 0; i < this.quizzes.length; i++) {
+          for (let j = 0; j < this.quizzes[i].questions.length; j++) {
+            this.quizzes[i].questions[j].selected = false;
+          }
+        }
+      },
       onSelectTeam(item) {
         this.selectedTeam = item;
         this.teamSelected = true;
         this.deselectAllTeams();
         item.selected = true;
       },
+      deselectAllTeams() {
+        for(let i = 0; i < this.quizzes.length; i++) {
+          for (let j = 0; j < this.quizzes[i].teams.length; j++) {
+            this.quizzes[i].teams[j].selected = false;
+          }
+        }
+      },
+      questionEnabledFromID(item) {
+        for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
+          if(this.selectedQuiz.questions[i].id === item) {
+            return this.selectedQuiz.questions[i].enabled;
+          }
+        }
+        return false;
+      },
+      questionTextFromID(item) {
+        for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
+          if(this.selectedQuiz.questions[i].id === item) {
+            return this.selectedQuiz.questions[i].questionText;
+          }
+        }
+        return "";
+      },
       save() {
 
-      },
-      cancel() {
-
-      },
-      deselectAllTeams() {
-        for(let i = 0; i < this.teams.length; i++) {
-          this.teams[i].selected = false;
-        }
       },
       handleError(errorMsg, errorObject) {
         const message = errorMsg ? errorMsg : errorObject;
@@ -129,12 +289,9 @@
     },
     mounted() {
       axios
-        .get(serverUrl + "/api/quiz/info")
+        .get(serverUrl + "/api/admin/quiz")
         .then(response => {
-          const resp = response.data;
-          this.teams = resp.teams;
-          this.allDoneText = resp.allDoneMessage;
-          this.superDuperHint = resp.superDuperHint;
+          this.quizzes = response.data.quizzes;
         })
         .catch(error => {
           this.loading = false;

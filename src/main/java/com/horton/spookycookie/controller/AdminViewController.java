@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * Date:   9/18/19
  */
 @Controller
-public class AdminController {
+public class AdminViewController {
 
     @RequestMapping("admin")
     public String admin() {
