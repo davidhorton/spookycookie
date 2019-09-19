@@ -104,9 +104,17 @@
         <b-card v-if="quizSelected && teamSelected" :header="questionOrderingHeader" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <b-list-group>
             <b-list-group-item v-for="(item, index) in selectedTeam.questionIds" :key="index">
-              {{item}}:
-              <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
-              <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
+              <div style="float: left;">
+                {{item}}:
+                <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
+                <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
+              </div>
+
+              <div style="float: right;">
+                <font-awesome-icon v-if="index !== 0" @click="()=>{moveQuestionUp(index)}" style="float: right; cursor: pointer; margin-left: 10px;" icon="arrow-up"></font-awesome-icon>
+                <font-awesome-icon v-if="index < selectedTeam.questionIds.length - 1" @click="()=>{moveQuestionDown(index)}" style="float: right; cursor: pointer; margin-left: 10px;" icon="arrow-down"></font-awesome-icon>
+                <font-awesome-icon @click="()=>{removeQuestionFromTeam(item)}" style="float: right; cursor: pointer;" icon="trash"></font-awesome-icon>
+              </div>
             </b-list-group-item>
           </b-list-group>
 
@@ -359,6 +367,25 @@
       },
       removeTeamClicked() {
         this.selectedQuiz.teams.pop();
+      },
+      moveQuestionUp(index) {
+        this.arrayMove(this.selectedTeam.questionIds, index, index - 1);
+      },
+      moveQuestionDown(index) {
+        this.arrayMove(this.selectedTeam.questionIds, index, index + 1);
+      },
+      arrayMove(arr, fromIndex, toIndex) {
+        var element = arr[fromIndex];
+        arr.splice(fromIndex, 1);
+        arr.splice(toIndex, 0, element);
+      },
+      removeQuestionFromTeam(item) {
+        for (let j = 0; j < this.selectedTeam.questionIds.length; j++) {
+          if(this.selectedTeam.questionIds[j] === item) {
+            this.selectedTeam.questionIds.splice(j, 1);
+            break;
+          }
+        }
       },
       questionEnabledFromID(item) {
         for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
