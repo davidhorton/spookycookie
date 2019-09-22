@@ -1,12 +1,23 @@
 package com.horton.spookycookie.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
+import java.util.Objects;
+
 /**
  * @author David Horton
  * Date:   9/15/19
  */
+@Entity
+@Table(name = "skquestion")
 public class Question {
 
-    private String id;
+    @Id
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    private Long questionID;
+
+    private String name;
     private String questionText;
     private String hint;
     private boolean enabled;
@@ -16,12 +27,24 @@ public class Question {
     private String answer4;
     private String answer5;
 
-    public String getId() {
-        return id;
+    @ManyToOne
+    @JoinColumn(name = "quizID", nullable = false, referencedColumnName = "quizID")
+    private Quiz quiz;
+
+    public Long getQuestionID() {
+        return questionID;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setQuestionID(Long questionID) {
+        this.questionID = questionID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getQuestionText() {
@@ -86,5 +109,35 @@ public class Question {
 
     public void setAnswer5(String answer5) {
         this.answer5 = answer5;
+    }
+
+    @JsonIgnore
+    public Quiz getQuiz() {
+        return quiz;
+    }
+
+    public void setQuiz(Quiz quiz) {
+        this.quiz = quiz;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Question question = (Question) o;
+        return enabled == question.enabled &&
+                Objects.equals(name, question.name) &&
+                Objects.equals(questionText, question.questionText) &&
+                Objects.equals(hint, question.hint) &&
+                Objects.equals(answer1, question.answer1) &&
+                Objects.equals(answer2, question.answer2) &&
+                Objects.equals(answer3, question.answer3) &&
+                Objects.equals(answer4, question.answer4) &&
+                Objects.equals(answer5, question.answer5);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, questionText, hint, enabled, answer1, answer2, answer3, answer4, answer5);
     }
 }

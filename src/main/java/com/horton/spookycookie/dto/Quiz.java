@@ -1,5 +1,8 @@
 package com.horton.spookycookie.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,14 +10,34 @@ import java.util.List;
  * @author David Horton
  * Date:   9/18/19
  */
+@Entity
+@Table(name = "skquiz")
 public class Quiz {
+
+    @Id
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    private Long quizID;
 
     private String name;
     private boolean current;
     private String allDoneMessage;
     private String superDuperHint;
+
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OrderBy("number")
     private List<Team> teams = new ArrayList<>();
+
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OrderBy("questionID")
     private List<Question> questions = new ArrayList<>();
+
+    public Long getQuizID() {
+        return quizID;
+    }
+
+    public void setQuizID(Long quizID) {
+        this.quizID = quizID;
+    }
 
     public String getName() {
         return name;
@@ -62,5 +85,10 @@ public class Quiz {
 
     public void setQuestions(List<Question> questions) {
         this.questions = questions;
+    }
+
+    @JsonIgnore
+    public Question getQuestionByID(Long id) {
+        return questions.stream().filter(o -> o.getQuestionID().equals(id)).findFirst().orElse(null);
     }
 }

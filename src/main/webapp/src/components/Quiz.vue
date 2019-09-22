@@ -34,15 +34,19 @@
         <b-card :header="currentQuestionHeader" v-if="teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <p style="color:#009c00" v-if="rightAnswer">{{rightAnswerText}}</p>
           <p>{{currentQuestionText}}</p>
+
           <a :class="showHint ? 'collapsed' : null" @click="showHint = !showHint" href="#">Show hint...</a>
           <b-collapse id="question-hint" class="mt-2" v-model="showHint">
-            <b-card>{{currentQuestionHint}}</b-card>
+            <b-card>{{currentQuestionHasHint ? currentQuestionHint : superDuperHint}}</b-card>
 
-            <a :class="showSuperDuperHint ? 'collapsed' : null" @click="showSuperDuperHint = !showSuperDuperHint" href="#">Still stuck?</a>
-            <b-collapse id="super-duper-hint" class="mt-2" v-model="showSuperDuperHint">
-              <b-card>{{superDuperHint}}</b-card>
-            </b-collapse>
+            <div v-if="currentQuestionHasHint">
+              <a :class="showSuperDuperHint ? 'collapsed' : null" @click="showSuperDuperHint = !showSuperDuperHint" href="#">Still stuck?</a>
+              <b-collapse id="super-duper-hint" class="mt-2" v-model="showSuperDuperHint">
+                <b-card>{{superDuperHint}}</b-card>
+              </b-collapse>
+            </div>
           </b-collapse>
+
           <p style="color:#e20000" v-if="wrongAnswer">{{wrongAnswerText}}</p>
           <b-form-input
             size="sm"
@@ -109,10 +113,12 @@
     computed: {
       currentQuestions() {
         const questionsForTeam = [];
-        for(let i = 0; i < this.selectedTeam.questionIds.length; i++) {
+        for(let i = 0; i < this.selectedTeam.teamQuestionXRefs.length; i++) {
           for(let j = 0; j < this.questions.length; j++) {
             const q = this.questions[j];
-            if(this.selectedTeam.questionIds[i] === q.id && q.enabled) {
+            console.log("here: " + JSON.stringify(this.selectedTeam.teamQuestionXRefs[i]));
+            console.log("here2: " + JSON.stringify(q));
+            if(this.selectedTeam.teamQuestionXRefs[i].questionID === q.questionID && q.enabled) {
               questionsForTeam.push(q);
               break;
             }
@@ -125,6 +131,9 @@
       },
       currentQuestionText() {
         return this.currentQuestion.questionText
+      },
+      currentQuestionHasHint() {
+        return this.currentQuestion.hint.trim() !== ''
       },
       currentQuestionHint() {
         return this.currentQuestion.hint
@@ -184,6 +193,8 @@
         }
       },
       startOver() {
+        this.rightAnswer = false;
+        this.wrongAnswer = false;
         this.currentStep = 0;
         this.teamSelected = false;
         this.selectedTeam = {};

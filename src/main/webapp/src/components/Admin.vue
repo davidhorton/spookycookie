@@ -69,9 +69,8 @@
         <b-card v-if="quizSelected" header="Questions" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <b-list-group>
             <b-list-group-item v-for="(item, index) in selectedQuiz.questions" :key="index" button :active="item.selected" @click="()=>{onSelectQuestion(item)}">
-              {{item.id}}:
-              <span v-if="item.enabled">{{item.questionText}}</span>
-              <span v-else>(Disabled) <s>{{item.questionText}}</s></span>
+              <span v-if="item.enabled">{{item.name}}</span>
+              <span v-else>(Disabled) <s>{{item.name}}</s></span>
             </b-list-group-item>
           </b-list-group>
 
@@ -103,25 +102,24 @@
 
         <b-card v-if="quizSelected && teamSelected" :header="questionOrderingHeader" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <b-list-group>
-            <b-list-group-item v-for="(item, index) in selectedTeam.questionIds" :key="index">
+            <b-list-group-item v-for="(item, index) in selectedTeam.teamQuestionXRefs" :key="index">
               <div style="float: left;">
-                {{item}}:
-                <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
-                <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
+                <span v-if="questionEnabledFromID(item.questionID)">{{questionTextFromID(item.questionID)}}</span>
+                <span v-else>(Disabled) <s>{{questionTextFromID(item.questionID)}}</s></span>
               </div>
 
               <div style="float: right;">
                 <font-awesome-icon v-if="index !== 0" @click="()=>{moveQuestionUp(index)}" style="float: right; cursor: pointer; margin-left: 10px;" icon="arrow-up"></font-awesome-icon>
-                <font-awesome-icon v-if="index < selectedTeam.questionIds.length - 1" @click="()=>{moveQuestionDown(index)}" style="float: right; cursor: pointer; margin-left: 10px;" icon="arrow-down"></font-awesome-icon>
-                <font-awesome-icon @click="()=>{removeQuestionFromTeam(item)}" style="float: right; cursor: pointer;" icon="trash"></font-awesome-icon>
+                <font-awesome-icon v-if="index < selectedTeam.teamQuestionXRefs.length - 1" @click="()=>{moveQuestionDown(index)}" style="float: right; cursor: pointer; margin-left: 10px;" icon="arrow-down"></font-awesome-icon>
+                <font-awesome-icon @click="()=>{removeQuestionFromTeam(item.questionID)}" style="float: right; cursor: pointer;" icon="trash"></font-awesome-icon>
               </div>
             </b-list-group-item>
           </b-list-group>
 
-          <p v-if="selectedTeam.questionIds.length === 0">No questions added yet for this team</p>
+          <p v-if="selectedTeam.teamQuestionXRefs.length === 0">No questions added yet for this team</p>
 
           <div style="text-align: center; margin-top: 25px;">
-            <b-button v-if="selectedTeam.questionIds.length < selectedQuiz.questions.length" @click="addTeamQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
+            <b-button v-if="selectedTeam.teamQuestionXRefs.length < selectedQuiz.questions.length" @click="addTeamQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
               <strong>Add Questions</strong>
             </b-button>
           </div>
@@ -146,7 +144,7 @@
               <label for="questionIDInput">ID:</label>
             </b-col>
             <b-col sm="9">
-              <b-form-input id="questionIDInput" size="sm" class="mr-sm-2" type="text" :disabled=true v-model="selectedQuestion.id"></b-form-input>
+              <b-form-input id="questionIDInput" size="sm" class="mr-sm-2" type="text" :disabled=true v-model="selectedQuestion.questionID"></b-form-input>
             </b-col>
           </b-row>
 
@@ -161,6 +159,15 @@
 
           <b-row class="my-1">
             <b-col sm="3">
+              <label for="questionNameInput">Name:</label>
+            </b-col>
+            <b-col sm="9">
+              <b-form-input id="questionNameInput" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.name"></b-form-input>
+            </b-col>
+          </b-row>
+
+          <b-row class="my-1">
+            <b-col sm="3">
               <label for="questionTextInput">Question Text:</label>
             </b-col>
             <b-col sm="9">
@@ -170,7 +177,7 @@
 
           <b-row class="my-1">
             <b-col sm="3">
-              <label for="hintInput">Hint:</label>
+              <label for="hintInput">Hint (optional):</label>
             </b-col>
             <b-col sm="9">
               <b-form-input id="hintInput" size="sm" class="mr-sm-2" type="text" v-model="selectedQuestion.hint"></b-form-input>
@@ -222,6 +229,8 @@
             </b-col>
           </b-row>
 
+          <p v-if="invalidQuestionInput" style="color: #dc0026;">Each question needs to have at least a name, a question, and an answer.</p>
+
           <div v-if="addNewQuestion" style="text-align: center; margin-top: 25px;">
             <b-button @click="saveQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
               <strong>Save New Question</strong>
@@ -231,6 +240,9 @@
           <div v-if="!addNewQuestion" style="text-align: center; margin-top: 25px;">
             <b-button @click="deleteQuestionClicked" variant="danger" class="shadow-sm p-2 rounded">
               <strong>Delete Question</strong>
+            </b-button>
+            <b-button @click="allDoneWithQuestionClicked" variant="primary" class="shadow-sm p-2 rounded">
+              <strong>All Done</strong>
             </b-button>
           </div>
         </b-container>
@@ -243,13 +255,16 @@
           <div style="max-height: 400px; overflow-y: scroll;">
             <b-list-group>
               <b-list-group-item v-for="(item, index) in questionsNotYetOnTeam" :key="index" button @click="()=>{newTeamQuestionSelected(item)}">
-                {{item}}:
                 <span v-if="questionEnabledFromID(item)">{{questionTextFromID(item)}}</span>
                 <span v-else>(Disabled) <s>{{questionTextFromID(item)}}</s></span>
               </b-list-group-item>
             </b-list-group>
           </div>
         </b-container>
+      </b-modal>
+
+      <b-modal v-model="showInvalidQuestionModal" centered hide-footer title="No Bueno..." header-bg-variant="danger" header-text-variant="dark">
+        <p>{{invalidQuestionModalText}}</p>
       </b-modal>
 
       <b-modal v-model="errored" centered hide-footer title="No Bueno..." header-bg-variant="danger" header-text-variant="dark">
@@ -277,13 +292,16 @@
         selectedQuestion: {},
         addNewQuestion: false,
         showQuestionModal: false,
-        newQuestionCounter: 1,
+        newItemCounter: 1,
         showAddTeamQuestionsModal: false,
+        invalidQuestionInput: false,
+        showInvalidQuestionModal: false,
+        invalidQuestionModalText: '',
       };
     },
     computed: {
       questionOrderingHeader() {
-        return "Question Ordering for Team #" + this.selectedTeam.number
+        return "Question Ordering for Team #" + this.selectedTeam.number + " (" + this.selectedTeam.teamQuestionXRefs.length + ")"
       },
       questionModalHeader() {
         return this.addNewQuestion ? 'Add New Question' : 'Edit Question';
@@ -299,15 +317,15 @@
         const questions = [];
         for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
           let questionOnTeam = false;
-          for (let j = 0; j < this.selectedTeam.questionIds.length; j++) {
-            if (this.selectedQuiz.questions[i].id === this.selectedTeam.questionIds[j]) {
+          for (let j = 0; j < this.selectedTeam.teamQuestionXRefs.length; j++) {
+            if (this.selectedQuiz.questions[i].questionID === this.selectedTeam.teamQuestionXRefs[j].questionID) {
               questionOnTeam = true;
               break;
             }
           }
 
           if(!questionOnTeam) {
-            questions.push(this.selectedQuiz.questions[i].id);
+            questions.push(this.selectedQuiz.questions[i].questionID);
           }
         }
         return questions;
@@ -340,8 +358,10 @@
         }
       },
       addNewQuestionClicked() {
+        this.invalidQuestionInput = false;
         this.selectedQuestion = {
-          id: 'NEW' + this.newQuestionCounter++,
+          questionID: 9000000 + this.newItemCounter++,
+          name: '',
           questionText: '',
           hint: '',
           enabled: true,
@@ -356,8 +376,14 @@
         this.showQuestionModal = true;
       },
       saveQuestionClicked() {
+        if(this.selectedQuestion.name.trim() === '' || this.selectedQuestion.questionText.trim() === '' || this.selectedQuestion.answer1.trim() === '') {
+          this.invalidQuestionInput = true;
+          return;
+        }
+
         this.selectedQuiz.questions.push({
-          id: this.selectedQuestion.id,
+          questionID: this.selectedQuestion.questionID,
+          name: this.selectedQuestion.name,
           questionText: this.selectedQuestion.questionText,
           hint: this.selectedQuestion.hint,
           enabled: this.selectedQuestion.enabled,
@@ -372,22 +398,32 @@
         this.showQuestionModal = false;
       },
       deleteQuestionClicked() {
-        const idToDelete = this.selectedQuestion.id;
+        const idToDelete = this.selectedQuestion.questionID;
         for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
-          if(this.selectedQuiz.questions[i].id === idToDelete) {
+          if(this.selectedQuiz.questions[i].questionID === idToDelete) {
             this.selectedQuiz.questions.splice(i, 1);
             break;
           }
         }
 
         for (let i = 0; i < this.selectedQuiz.teams.length; i++) {
-          for (let j = 0; j < this.selectedQuiz.teams[i].questionIds.length; j++) {
-            if(this.selectedQuiz.teams[i].questionIds[j] === idToDelete) {
-              this.selectedQuiz.teams[i].questionIds.splice(j, 1);
+          for (let j = 0; j < this.selectedQuiz.teams[i].teamQuestionXRefs.length; j++) {
+            if(this.selectedQuiz.teams[i].teamQuestionXRefs[j].questionID === idToDelete) {
+              this.selectedQuiz.teams[i].teamQuestionXRefs.splice(j, 1);
               break;
             }
           }
         }
+        this.selectedQuestion = {};
+        this.deselectAllQuestions();
+        this.showQuestionModal = false;
+      },
+      allDoneWithQuestionClicked() {
+        if(this.selectedQuestion.name.trim() === '' || this.selectedQuestion.questionText.trim() === '' || this.selectedQuestion.answer1.trim() === '') {
+          this.invalidQuestionInput = true;
+          return;
+        }
+
         this.selectedQuestion = {};
         this.deselectAllQuestions();
         this.showQuestionModal = false;
@@ -407,19 +443,22 @@
       },
       addNewTeamClicked() {
         this.selectedQuiz.teams.push({
-          id: 'NEW' + this.newQuestionCounter++,
+          teamID: 9000000 + this.newItemCounter++,
           number: this.selectedQuiz.teams.length + 1,
-          questionIds: []
+          teamQuestionXRefs: []
         });
       },
       removeTeamClicked() {
+        this.selectedTeam = {};
+        this.teamSelected = false;
+        this.deselectAllTeams();
         this.selectedQuiz.teams.pop();
       },
       moveQuestionUp(index) {
-        this.arrayMove(this.selectedTeam.questionIds, index, index - 1);
+        this.arrayMove(this.selectedTeam.teamQuestionXRefs, index, index - 1);
       },
       moveQuestionDown(index) {
-        this.arrayMove(this.selectedTeam.questionIds, index, index + 1);
+        this.arrayMove(this.selectedTeam.teamQuestionXRefs, index, index + 1);
       },
       arrayMove(arr, fromIndex, toIndex) {
         var element = arr[fromIndex];
@@ -427,9 +466,9 @@
         arr.splice(toIndex, 0, element);
       },
       removeQuestionFromTeam(item) {
-        for (let j = 0; j < this.selectedTeam.questionIds.length; j++) {
-          if(this.selectedTeam.questionIds[j] === item) {
-            this.selectedTeam.questionIds.splice(j, 1);
+        for (let j = 0; j < this.selectedTeam.teamQuestionXRefs.length; j++) {
+          if(this.selectedTeam.teamQuestionXRefs[j].questionID === item) {
+            this.selectedTeam.teamQuestionXRefs.splice(j, 1);
             break;
           }
         }
@@ -438,14 +477,17 @@
         this.showAddTeamQuestionsModal = true;
       },
       newTeamQuestionSelected(item) {
-        this.selectedTeam.questionIds.push(item);
-        if(this.selectedTeam.questionIds.length >= this.selectedQuiz.questions.length) {
+        this.selectedTeam.teamQuestionXRefs.push({
+          teamQuestionID: 9000000 + this.newItemCounter++,
+          questionID: item,
+        });
+        if(this.selectedTeam.teamQuestionXRefs.length >= this.selectedQuiz.questions.length) {
           this.showAddTeamQuestionsModal = false;
         }
       },
       questionEnabledFromID(item) {
         for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
-          if(this.selectedQuiz.questions[i].id === item) {
+          if(this.selectedQuiz.questions[i].questionID === item) {
             return this.selectedQuiz.questions[i].enabled;
           }
         }
@@ -453,17 +495,67 @@
       },
       questionTextFromID(item) {
         for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
-          if(this.selectedQuiz.questions[i].id === item) {
-            return this.selectedQuiz.questions[i].questionText;
+          if(this.selectedQuiz.questions[i].questionID === item) {
+            return this.selectedQuiz.questions[i].name;
           }
         }
         return "";
       },
       save() {
+        this.invalidQuestionModalText = '';
+        for (let i = 0; i < this.selectedQuiz.questions.length; i++) {
+          const question = this.selectedQuiz.questions[i];
+          if(question.name.trim() === '' || question.questionText.trim() === '' || question.answer1.trim() === '') {
+            this.showInvalidQuestionModal = true;
+            this.invalidQuestionModalText = "Looks like question #" + (i + 1) + " is missing a name, a question, or an answer. Can't save until that's fixed.";
+            return;
+          }
+        }
 
+
+        this.loading = true;
+        axios
+          .post(serverUrl + "/api/admin/quizzes", {
+            quizzes: this.quizzes,
+          })
+          .then(response => {
+            this.reset();
+            this.quizzes = response.data.quizzes;
+          })
+          .catch(error => {
+            this.loading = false;
+            this.handleError(null, error);
+          })
+          .finally(() => (this.loading = false));
       },
       cancel() {
-        window.location.reload();
+        this.reset();
+        this.fetchQuizzes();
+      },
+      reset() {
+        this.loading = true;
+        this.errored = false;
+        this.quizzes = [];
+        this.quizSelected = false;
+        this.selectedQuiz = {};
+        this.teamSelected = false;
+        this.selectedTeam = {};
+        this.selectedQuestion = {};
+        this.addNewQuestion = false;
+        this.showQuestionModal = false;
+        this.showAddTeamQuestionsModal = false;
+      },
+      fetchQuizzes() {
+        axios
+          .get(serverUrl + "/api/admin/quiz")
+          .then(response => {
+            this.quizzes = response.data.quizzes;
+          })
+          .catch(error => {
+            this.loading = false;
+            this.handleError(null, error);
+          })
+          .finally(() => (this.loading = false));
       },
       handleError(errorMsg, errorObject) {
         const message = errorMsg ? errorMsg : errorObject;
@@ -475,16 +567,7 @@
       },
     },
     mounted() {
-      axios
-        .get(serverUrl + "/api/admin/quiz")
-        .then(response => {
-          this.quizzes = response.data.quizzes;
-        })
-        .catch(error => {
-          this.loading = false;
-          this.handleError(null, error);
-        })
-        .finally(() => (this.loading = false));
+      this.fetchQuizzes();
     }
   };
 </script>

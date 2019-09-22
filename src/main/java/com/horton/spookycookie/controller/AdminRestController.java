@@ -27,6 +27,6 @@ public class AdminRestController {
 
     @PostMapping("quizzes")
     public AdminQuizInfo saveQuizzes(@RequestBody final AdminQuizInfo adminQuizInfo) {
-        return adminQuizInfo;
+        return quizService.saveQuizzes(adminQuizInfo);
     }
 }
