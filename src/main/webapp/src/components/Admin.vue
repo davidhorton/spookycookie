@@ -26,7 +26,15 @@
         <b-card header="Quizzes" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <div>
             <b-list-group>
-              <b-list-group-item v-for="(item, index) in quizzes" :key="index" button :active="item.selected" @click="()=>{onSelectQuiz(item)}">{{item.name}} {{item.current ? '(Current)' : ''}}</b-list-group-item>
+              <b-list-group-item v-for="(item, index) in quizzes" :key="index" button :active="item.selected" @click="()=>{onSelectQuiz(item)}">
+                <div style="float: left;">
+                  {{item.name}} {{item.current ? '(Current)' : ''}}
+                </div>
+
+                <div style="float: right;">
+                  <font-awesome-icon style="float: right; cursor: pointer;" icon="edit"></font-awesome-icon>
+                </div>
+              </b-list-group-item>
             </b-list-group>
 
             <p v-if="quizzes.length === 0">Uh oh, there are no quizzes. That probably means something went wrong - talk to David Horton!</p>
@@ -69,8 +77,14 @@
         <b-card v-if="quizSelected" header="Questions" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <b-list-group>
             <b-list-group-item v-for="(item, index) in selectedQuiz.questions" :key="index" button :active="item.selected" @click="()=>{onSelectQuestion(item)}">
-              <span v-if="item.enabled">{{item.name}}</span>
-              <span v-else>(Disabled) <s>{{item.name}}</s></span>
+              <div style="float: left;">
+                <span v-if="item.enabled">{{item.name}}</span>
+                <span v-else>(Disabled) <s>{{item.name}}</s></span>
+              </div>
+
+              <div style="float: right;">
+                <font-awesome-icon style="float: right; cursor: pointer;" icon="edit"></font-awesome-icon>
+              </div>
             </b-list-group-item>
           </b-list-group>
 
@@ -85,7 +99,15 @@
 
         <b-card v-if="quizSelected" header="Teams" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <b-list-group>
-            <b-list-group-item v-for="(item, index) in selectedQuiz.teams" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
+            <b-list-group-item v-for="(item, index) in selectedQuiz.teams" :key="index" button :active="item.selected" @click="()=>{onSelectTeam(item)}">
+              <div style="float: left;">
+                Team {{item.number}}
+              </div>
+
+              <div style="float: right;">
+                <font-awesome-icon style="float: right; cursor: pointer;" icon="edit"></font-awesome-icon>
+              </div>
+            </b-list-group-item>
           </b-list-group>
 
           <p v-if="selectedQuiz.teams.length === 0">There aren't any teams!</p>
