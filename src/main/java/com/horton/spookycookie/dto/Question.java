@@ -26,6 +26,7 @@ public class Question {
     private String answer3;
     private String answer4;
     private String answer5;
+    private String imageFileName;
 
     @ManyToOne
     @JoinColumn(name = "quizID", nullable = false, referencedColumnName = "quizID")
@@ -111,6 +112,14 @@ public class Question {
         this.answer5 = answer5;
     }
 
+    public String getImageFileName() {
+        return imageFileName;
+    }
+
+    public void setImageFileName(String imageFileName) {
+        this.imageFileName = imageFileName;
+    }
+
     @JsonIgnore
     public Quiz getQuiz() {
         return quiz;
@@ -133,11 +142,12 @@ public class Question {
                 Objects.equals(answer2, question.answer2) &&
                 Objects.equals(answer3, question.answer3) &&
                 Objects.equals(answer4, question.answer4) &&
-                Objects.equals(answer5, question.answer5);
+                Objects.equals(answer5, question.answer5) &&
+                Objects.equals(imageFileName, question.imageFileName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, questionText, hint, enabled, answer1, answer2, answer3, answer4, answer5);
+        return Objects.hash(name, questionText, hint, enabled, answer1, answer2, answer3, answer4, answer5, imageFileName);
     }
 }

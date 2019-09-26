@@ -42,5 +42,9 @@ task webappbuild(type:Exec, dependsOn:npmInstall) {
 			from "src/main/webapp/dist"
 			into "src/main/resources/static"
 		}
+		copy {
+			from "src/main/webapp/src/assets"
+			into "src/main/resources/static"
+		}
 	}
 }

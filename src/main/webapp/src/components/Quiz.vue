@@ -33,6 +33,9 @@
 
         <b-card :header="currentQuestionHeader" v-if="teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <p style="color:#009c00" v-if="rightAnswer">{{rightAnswerText}}</p>
+
+          <img v-if="currentQuestionHasImage" style="display: block; margin-left: auto; margin-right: auto; margin-bottom: 30px;" :src="currentQuestionImage" alt="Hint image">
+
           <p>{{currentQuestionText}}</p>
 
           <a :class="showHint ? 'collapsed' : null" @click="showHint = !showHint" href="#">Show hint...</a>
@@ -116,8 +119,6 @@
         for(let i = 0; i < this.selectedTeam.teamQuestionXRefs.length; i++) {
           for(let j = 0; j < this.questions.length; j++) {
             const q = this.questions[j];
-            console.log("here: " + JSON.stringify(this.selectedTeam.teamQuestionXRefs[i]));
-            console.log("here2: " + JSON.stringify(q));
             if(this.selectedTeam.teamQuestionXRefs[i].questionID === q.questionID && q.enabled) {
               questionsForTeam.push(q);
               break;
@@ -134,6 +135,12 @@
       },
       currentQuestionHasHint() {
         return this.currentQuestion.hint.trim() !== ''
+      },
+      currentQuestionHasImage() {
+        return this.currentQuestion.imageFileName && this.currentQuestion.imageFileName.trim() !== ''
+      },
+      currentQuestionImage() {
+        return this.currentQuestion.imageFileName
       },
       currentQuestionHint() {
         return this.currentQuestion.hint
