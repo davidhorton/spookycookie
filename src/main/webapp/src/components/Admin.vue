@@ -251,6 +251,9 @@
             </b-col>
           </b-row>
 
+          <p v-if="selectedQuestion.imageFileName && selectedQuestion.imageFileName.trim() !== ''">There is an image tied to this question! But you can't see it here on the admin page yet... Talk to David Horton if you need it changed or removed.</p>
+          <p v-else>This question does not have an image tied to it. Talk to David Horton if you want to add one.</p>
+
           <p v-if="invalidQuestionInput" style="color: #dc0026;">Each question needs to have at least a name, a question, and an answer.</p>
 
           <div v-if="addNewQuestion" style="text-align: center; margin-top: 25px;">
