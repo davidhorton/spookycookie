@@ -1,11 +1,11 @@
 package com.horton.spookycookie.controller;
 
 import com.horton.spookycookie.dto.Quiz;
+import com.horton.spookycookie.dto.QuizEvent;
+import com.horton.spookycookie.service.QuizEventService;
 import com.horton.spookycookie.service.QuizService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author David Horton
@@ -16,14 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class QuizRestController {
 
     private final QuizService quizService;
+    private final QuizEventService quizEventService;
 
     @Autowired
-    public QuizRestController(final QuizService quizService) {
+    public QuizRestController(final QuizService quizService, QuizEventService quizEventService) {
         this.quizService = quizService;
+        this.quizEventService = quizEventService;
     }
 
     @GetMapping("/current")
     public Quiz getCurrentQuiz() {
         return quizService.getCurrentQuiz();
+    }
+
+    @PostMapping("/event")
+    public QuizEvent registerQuizEvent(@RequestBody QuizEvent quizEvent) {
+        return quizEventService.registerEvent(quizEvent);
     }
 }

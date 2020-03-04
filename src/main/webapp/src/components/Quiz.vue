@@ -23,7 +23,26 @@
       ></b-spinner>
       <b-container v-if="!loading">
 
-        <b-card header="Choose your team!" v-if="!teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+        <b-card header="Welcome!" v-if="!nameEntered" id bg-variant="light" class="shadow p-3 mb-5 rounded">
+          <p>Please enter your name:</p>
+
+          <p style="color:#e20000" v-if="!nameEnteredValid">Type in your name!</p>
+          <b-form-input
+            size="sm"
+            class="mr-sm-2"
+            type="text"
+            style="margin-top: 20px;"
+            @keydown.enter="onNameEntered"
+            v-model="name"
+          ></b-form-input>
+          <div class="pt-4">
+            <b-button @click="onNameEntered" variant="success" class="shadow-sm p-2 rounded float-right">
+              <strong>Next ></strong>
+            </b-button>
+          </div>
+        </b-card>
+
+        <b-card header="Choose your team!" v-if="nameEntered && !teamSelected && !allDone" id bg-variant="light" class="shadow p-3 mb-5 rounded">
           <div>
             <b-list-group>
               <b-list-group-item v-for="(item, index) in teams" :key="index" button @click="()=>{onSelectTeam(item)}">Team {{item.number}}</b-list-group-item>
@@ -88,6 +107,7 @@
 </template>
 
 <script>
+  import Vue from 'vue';
   import axios from "axios";
   import { serverUrl } from "../config.js";
   export default {
@@ -99,11 +119,15 @@
         questions: [],
         allDoneText: '',
         superDuperHint: '',
+        nameEntered: false,
+        nameEnteredValid: true,
+        name: '',
         teamSelected: false,
         teams: [],
         selectedTeam: {},
         answer: '',
         currentStep: 0,
+        sessionID: 0,
         showHint: false,
         showSuperDuperHint: false,
         allDone: false,
@@ -154,6 +178,14 @@
         this.selectedTeam = item;
         this.teamSelected = true;
       },
+      onNameEntered() {
+        if(this.name.trim() !== "") {
+          this.nameEntered = true;
+        }
+        else {
+          this.nameEnteredValid = false;
+        }
+      },
       previousQuestion() {
         if(this.currentStep === 0) {
           this.teamSelected = false;
@@ -178,10 +210,13 @@
         }
 
         if(foundCorrect) {
+          let notificationText = "Team #" + this.selectedTeam.number + ": ";
           if (this.currentStep === this.currentQuestions.length - 1) {
             this.allDone = true;
+            notificationText += this.name.trim() + " is all done!";
           } else {
             this.currentStep++;
+            notificationText += this.name.trim() + " answered step " + this.currentStep + " correctly!";
           }
           this.rightAnswer = true;
           this.wrongAnswer = false;
@@ -191,6 +226,8 @@
           this.showHint = false;
           this.showSuperDuperHint = false;
           this.$forceUpdate();
+
+          this.sendEvent(notificationText);
         }
         else {
           this.rightAnswer = false;
@@ -237,6 +274,29 @@
           window.location.href = "login";
         }
       },
+      sendEvent(text) {
+        axios.post(serverUrl + "/api/quiz/event", {
+          eventText: text,
+          sessionID: this.sessionID
+        });
+      },
+      listenForEvents(sessionID) {
+        const evtSource = new EventSource(serverUrl + "/api/event/stream");
+        evtSource.onmessage = function (event) {
+          if(event && event.data) {
+            const eventItem = JSON.parse(event.data);
+            if(eventItem.sessionID !== sessionID) {
+              const vm = new Vue();
+              vm.$bvToast.toast(eventItem.eventText, {
+                autoHideDelay: 5000,
+                appendToast: true,
+                noCloseButton: true,
+                toaster: 'b-toaster-bottom-right',
+              });
+            }
+          }
+        }
+      },
     },
     mounted() {
       axios
@@ -247,6 +307,8 @@
           this.allDoneText = resp.allDoneMessage;
           this.superDuperHint = resp.superDuperHint;
           this.questions = resp.questions;
+          this.sessionID = Math.floor(Math.random() * Math.floor(99999999));
+          this.listenForEvents(this.sessionID);
         })
         .catch(error => {
           this.loading = false;
