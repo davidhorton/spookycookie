@@ -3,7 +3,7 @@
   <div class="main">
     <div style="background-color: rgba(37, 36, 57, 0.9)">
       <b-navbar toggleable="lg" type="dark" variant="purple" class="shadow p-2 mb-4">
-        <b-navbar-brand style="padding-left:20%;">Spooky Cookie!</b-navbar-brand>
+        <b-navbar-brand style="padding-left:20%;">{{quizName}}</b-navbar-brand>
 
         <b-navbar-nav class="ml-auto">
           <b-nav-item-dropdown right>
@@ -117,6 +117,7 @@
         loading: true,
         errored: false,
         questions: [],
+        quizName: '',
         allDoneText: '',
         superDuperHint: '',
         nameEntered: false,
@@ -307,6 +308,7 @@
           this.allDoneText = resp.allDoneMessage;
           this.superDuperHint = resp.superDuperHint;
           this.questions = resp.questions;
+          this.quizName = resp.name;
           this.sessionID = Math.floor(Math.random() * Math.floor(99999999));
           this.listenForEvents(this.sessionID);
         })
